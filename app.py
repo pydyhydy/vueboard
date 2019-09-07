@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, session, redirect, jsonify
+from flask import Flask, render_template, request, session, redirect, jsonify, g
+import sqlite3
 import pickle
 
 
@@ -31,16 +32,34 @@ try:
 except:
     pass
 
+# get Database Object.
+def get_db():
+    if 'db' not in g:
+        g.db = sqlite3.connect('sample.sqlite3')
+    return g.db
+
+
+# close Dataabse Object.
+def close_db(e=None):
+    db = g.pop('db', None)
+
+
+    if db is not None:
+        db.close()
+
 
 # access top page.
 @app.route('/', methods=['GET'])
 def index():
-    global message_data
-    return render_template('messages.html', \
-        login=False, \
-        title='Messages', \
-        message='not logined...', 
-        data=message_data )
+    mydata = []
+    db = get_db()
+    cur = db.execute("select * from mydata")
+    mydata = cur.fetchall()
+    return render_template('index.html', \
+        title='Index', \
+        message='※SQLite3 Database',
+        alert='This is SQLite3 Database Sample!',
+        data=mydata)
 
 
 # post message.
@@ -58,6 +77,8 @@ def postMsg():
     except:
         pass
     return 'True'
+
+
 
 
 # get messages.
